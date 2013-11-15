@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/normalize/2.1.3/normalize.min.css">
+<style>
+body {
+    font-family: Helvetica;
+    font-size: 10px;
+}
+.cell {
+    display: table;
+    border-radius: 10px;
+}
+.cell .inner {
+   display: table-cell;
+   text-align: center;
+   vertical-align: middle;
+   font-size: 40px;
+   font-weight: bold;
+   color: white;
+}
+.good {
+    background: #2ecc71;
+}
+.bad {
+    background: #e74c3c;
+}
+</style>
+</head>
+<body>
+<div class="grid">
+</div>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="d3-colgrid.js"></script>
+<script>
+
+var width  = 450,
+    height = 450,
+    tick   = 0;
+
+var colgrid = d3.layout.colgrid()
+  .size([width, height])
+  .padding([0.1, 0.1]);
+
+var grid = d3.select(".grid")
+  .style({
+    width    : width+'px',
+    height   : height+'px',
+    position : 'relative',
+    overflow : 'hidden',
+  });
+
+// Generate some data
+function numbers(n) { var r = [], i = -1; while(++i < n) { r.push(i) } return r}
+function letters(n) { var r = [], i = -1; while(++i < n) { r.push(String.fromCharCode(97+i)) } return r}
+function trianglef(x,a) { return Math.abs(x % a - a/2) } // time, amplitude
+function squaref(x,a,p,dc) { return Math.round(x%p < dc*p ? 1 : 0)*a } // time, amplitude, period, duty cycle [0..1]
+
+function getdata() {
+    var data = [], list;
+    list = numbers(trianglef(tick,6)+1); if(list.length > 0) data.push(list);
+    list = letters(trianglef(tick+1,8)+1); if(list.length > 0) data.push(list);
+    if (squaref(tick,1,12,0.5)) {
+        list = numbers(trianglef(tick+4,10)+1); if(list.length > 0) data.push(list);
+    }
+    return data;
+}
+
+function cellclass(d) {
+    var color = (typeof(d.d) == 'number' && d.d > 2) ? 'bad' : 'good';
+    return 'cell '+color;
+}
+
+function update() {
+    ++tick;
+    var data = getdata();
+    grid.selectAll('.cell').remove();
+    grid.selectAll('.cell').data(colgrid(data)).enter().append('div')
+        .attr('class',function(d) {return cellclass(d)}).style({
+            position: 'absolute',
+            left   : function(d) {return d.x+'px'},
+            top    : function(d) {return d.y+'px'},
+            width  : colgrid.nodesize()[0]+'px',
+            height : colgrid.nodesize()[1]+'px'
+        })
+        .append('div').attr('class','inner')
+        .text(function(d) {return d.d});
+}
+
+update();
+window.setInterval(update,1500);
+
+</script>
+</body>
+</html>
